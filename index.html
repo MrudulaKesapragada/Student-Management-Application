@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f3f4f6;      
+            --bg-secondary: #ffffff;    
+            --border-color: #e5e7eb;    
+            --text-primary: #1f2937;      
+            --text-secondary: #6b7280;   
+            --accent-primary: #4f46e5;    
+            --accent-secondary: #6366f1;   
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- UI Element Styling --- */
+        .light-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.04);
+        }
+
+        .modal, .toast-container, .skeleton-row { display: none; }
+        .tab-content { display: none; animation: fadeIn 0.5s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .tab-button.active {
+            background-color: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.2);
+        }
+
+        /* Custom input styles for light mode */
+        .light-input {
+            background-color: #f9fafb; 
+            border: 1px solid #d1d5db; 
+            color: var(--text-primary);
+        }
+        .light-input::placeholder {
+            color: var(--text-secondary);
+        }
+        .light-input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+
+        /* --- Toast Notification --- */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 100;
+        }
+        .toast {
+            animation: slideInRight 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* --- Skeleton Loader --- */
+        .skeleton-row {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .4; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="light-card p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-black tracking-tight text-gray-900">Student Management Application</h1>
+                </div>
+                <div class="w-14 h-14 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-user-graduate text-white text-2xl"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="mb-8 light-card p-2">
+            <nav id="tabs" class="flex space-x-2">
+                <button data-tab="roster" class="tab-button active flex-1 whitespace-nowrap py-3 px-4 font-bold text-sm text-center rounded-lg transition-all duration-300">
+                    <i class="fas fa-users mr-2"></i>Student
+                </button>
+                <button data-tab="attendance" class="tab-button flex-1 whitespace-nowrap py-3 px-4 font-bold text-sm text-gray-500 hover:bg-gray-100 text-center rounded-lg transition-all duration-300">
+                    <i class="fas fa-user-check mr-2"></i>Attendance
+                </button>
+                <button data-tab="performance" class="tab-button flex-1 whitespace-nowrap py-3 px-4 font-bold text-sm text-gray-500 hover:bg-gray-100 text-center rounded-lg transition-all duration-300">
+                    <i class="fas fa-chart-pie mr-2"></i>Performance
+                </button>
+                <button data-tab="dashboard" class="tab-button flex-1 whitespace-nowrap py-3 px-4 font-bold text-sm text-gray-500 hover:bg-gray-100 text-center rounded-lg transition-all duration-300">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                </button>
+            </nav>
+        </div>
+
+        <main>
+            <!-- Student Section -->
+            <div id="roster-section" class="tab-content active">
+                <div class="light-card p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Enroll New Student</h2>
+                    <form id="add-student-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <input name="name" placeholder="Full Name" required class="light-input w-full rounded-md shadow-sm">
+                        <input name="class" placeholder="Class" required class="light-input w-full rounded-md shadow-sm">
+                        <input type="number" name="roll" placeholder="Roll No." required class="light-input w-full rounded-md shadow-sm">
+                        <input name="grade" placeholder="Grade (e.g., A+)" required class="light-input w-full rounded-md shadow-sm">
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 font-semibold shadow-lg hover:shadow-indigo-500/30 transition">
+                            <i class="fas fa-user-plus mr-2"></i>Enroll
+                        </button>
+                    </form>
+                </div>
+                <div class="light-card overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200"><h2 class="text-2xl font-bold text-gray-800">Student Roster</h2></div>
+                    <div class="overflow-x-auto"><table class="min-w-full">
+                        <thead class="bg-gray-50"><tr id="roster-header"></tr></thead>
+                        <tbody id="student-list-body"></tbody>
+                    </table></div>
+                </div>
+            </div>
+
+            <!-- Attendance Section -->
+            <div id="attendance-section" class="tab-content">
+                <div class="light-card overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-800">Daily Attendance</h2>
+                    </div>
+                    <div class="overflow-x-auto"><table class="min-w-full">
+                        <thead class="bg-gray-50"><tr id="attendance-header"></tr></thead>
+                        <tbody id="attendance-list-body"></tbody>
+                    </table></div>
+                </div>
+            </div>
+
+            <!-- Performance Section -->
+             <div id="performance-section" class="tab-content">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 light-card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200"><h2 class="text-2xl font-bold text-gray-800">Academic Performance</h2></div>
+                        <div class="overflow-x-auto"><table class="min-w-full">
+                            <thead class="bg-gray-50"><tr id="performance-header"></tr></thead>
+                            <tbody id="performance-list-body"></tbody>
+                        </table></div>
+                    </div>
+                    <div class="flex flex-col gap-8">
+                        <div class="light-card p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Grade Distribution</h3>
+                            <canvas id="grade-chart"></canvas>
+                        </div>
+                         <div class="light-card p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Top Performers</h3>
+                            <ul id="top-performers-list" class="space-y-3"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Dashboard Section -->
+            <div id="dashboard-section" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="light-card p-6 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-500">Total Students</h3>
+                            <p id="total-students" class="text-5xl font-black text-gray-800 mt-1">0</p>
+                        </div>
+                        <div class="mt-4 h-2 bg-indigo-500 rounded-full w-1/2"></div>
+                    </div>
+                     <div class="light-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-500 mb-2">Attendance Rate</h3>
+                        <div class="h-40 w-40 mx-auto relative">
+                           <canvas id="attendance-chart"></canvas>
+                           <p id="attendance-rate-text" class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-green-600"></p>
+                        </div>
+                    </div>
+                    <div class="light-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-500 mb-2">Class Average</h3>
+                        <div class="h-40 w-40 mx-auto relative">
+                           <canvas id="average-grade-chart"></canvas>
+                           <p id="average-grade-text" class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-blue-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals and Notifications -->
+    <div id="edit-modal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm h-full w-full flex items-center justify-center"></div>
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm h-full w-full flex items-center justify-center"></div>
+    <div id="toast-container" class="toast-container"></div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE MANAGEMENT ---
+        let state = {
+            students: [
+                { id: 1, name: 'Olivia Chen', class: '10th Grade', roll: 12, grade: 'A+', attendance: 'Present' },
+                { id: 2, name: 'Benjamin Carter', class: '9th Grade', roll: 5, grade: 'B', attendance: 'Absent' },
+                { id: 3, name: 'Liam Rodriguez', class: '11th Grade', roll: 23, grade: 'A-', attendance: 'Present' },
+                { id: 4, name: 'Sophia Patel', class: '10th Grade', roll: 8, grade: 'C+', attendance: 'Present' },
+                { id: 5, name: 'Noah Kim', class: '9th Grade', roll: 15, grade: 'B+', attendance: 'Present' },
+                { id: 6, 'name': 'Ava Thompson', class: '11th Grade', roll: 2, grade: 'A', attendance: 'Absent' }
+            ],
+            nextId: 7,
+            isLoading: true,
+            studentToEdit: null,
+            studentToDelete: null,
+            toast: { message: '', type: '', visible: false },
+        };
+
+        // --- CHART INSTANCES ---
+        let chartInstances = {};
+
+        // --- DOM REFERENCES ---
+        const doc = (selector) => document.querySelector(selector);
+        const docAll = (selector) => document.querySelectorAll(selector);
+
+        // --- UTILITY FUNCTIONS ---
+        const getAvatarUrl = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&rounded=true&bold=true&font-size=0.33`;
+        const getGradeValue = (grade) => ({'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C':5,'C-':4,'D':3,'F':0}[grade.toUpperCase()] || 0);
+
+        // --- RENDER FUNCTIONS ---
+        const render = () => {
+            renderTables();
+            renderDashboard();
+            renderPerformanceCharts();
+            renderModals();
+            renderToast();
+        };
+
+        const renderTables = () => {
+            const sortedStudents = [...state.students].sort((a,b) => a.roll - b.roll);
+            const headers = {
+                roster: ['Name', 'Roll No.', 'Class', 'Grade', 'Attendance', 'Actions'],
+                attendance: ['Student', 'Roll No.', 'Status'],
+                performance: ['Student', 'Grade', 'Remarks']
+            };
+            doc('#roster-header').innerHTML = headers.roster.map(h => `<th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
+            doc('#attendance-header').innerHTML = headers.attendance.map(h => `<th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
+            doc('#performance-header').innerHTML = headers.performance.map(h => `<th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
+
+            if (state.isLoading) {
+                const skeletonHtml = Array(5).fill(renderSkeletonRow(headers.roster.length)).join('');
+                doc('#student-list-body').innerHTML = skeletonHtml;
+                doc('#attendance-list-body').innerHTML = skeletonHtml;
+                doc('#performance-list-body').innerHTML = skeletonHtml;
+                return;
+            }
+            
+            doc('#student-list-body').innerHTML = sortedStudents.map(renderRosterRow).join('') || `<tr><td colspan="6" class="text-center py-10 text-gray-500">No students yet.</td></tr>`;
+            doc('#attendance-list-body').innerHTML = sortedStudents.map(renderAttendanceRow).join('') || `<tr><td colspan="3" class="text-center py-10 text-gray-500">No students.</td></tr>`;
+            doc('#performance-list-body').innerHTML = sortedStudents.map(renderPerformanceRow).join('') || `<tr><td colspan="3" class="text-center py-10 text-gray-500">No data.</td></tr>`;
+        };
+        
+        const renderSkeletonRow = (cols) => `<tr class="skeleton-row">${Array(cols).fill('<td class="p-4"><div class="h-6 bg-gray-200 rounded"></div></td>').join('')}</tr>`;
+
+        // Row Templates
+        const renderRosterRow = student => `
+            <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                <td class="px-5 py-3"><div class="flex items-center"><img class="w-10 h-10 rounded-full mr-4" src="${getAvatarUrl(student.name)}"><p class="font-semibold text-gray-800">${student.name}</p></div></td>
+                <td class="px-5 py-3 text-gray-600">${student.roll}</td><td class="text-gray-600">${student.class}</td><td class="font-bold text-gray-800">${student.grade}</td>
+                <td><span class="px-3 py-1 text-xs font-semibold rounded-full ${student.attendance === 'Present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${student.attendance}</span></td>
+                <td><button data-id="${student.id}" class="edit-btn text-indigo-600 hover:text-indigo-500 mr-4 transition"><i class="fas fa-edit"></i></button><button data-id="${student.id}" class="delete-btn text-red-600 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i></button></td>
+            </tr>`;
+        const renderAttendanceRow = s => `
+            <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                <td class="px-5 py-3"><div class="flex items-center"><img class="w-10 h-10 rounded-full mr-4" src="${getAvatarUrl(s.name)}"><p class="font-semibold text-gray-800">${s.name}</p></div></td>
+                <td class="px-5 py-3 text-gray-600">${s.roll}</td><td><div class="flex space-x-2"><button data-id="${s.id}" data-status="Present" class="attendance-btn px-3 py-1 rounded-full text-xs font-semibold transition ${s.attendance === 'Present' ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}">Present</button><button data-id="${s.id}" data-status="Absent" class="attendance-btn px-3 py-1 rounded-full text-xs font-semibold transition ${s.attendance === 'Absent' ? 'bg-red-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}">Absent</button></div></td>
+            </tr>`;
+        const renderPerformanceRow = s => {
+            const getRemark = g => ({'A':'Excellent','B':'Good','C':'Satisfactory','D':'Needs Improvement'}[g.charAt(0)]||'');
+            return `<tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors"><td class="px-5 py-3"><div class="flex items-center"><img class="w-10 h-10 rounded-full mr-4" src="${getAvatarUrl(s.name)}"><p class="font-semibold text-gray-800">${s.name}</p></div></td><td class="px-5 py-3 font-bold text-gray-800">${s.grade}</td><td><span class="font-semibold text-indigo-600">${getRemark(s.grade)}</span></td></tr>`;
+        };
+
+        const renderDashboard = () => {
+            const studentCount = state.students.length;
+            const presentCount = state.students.filter(s => s.attendance === 'Present').length;
+            const attendanceRate = studentCount > 0 ? Math.round((presentCount / studentCount) * 100) : 0;
+            const totalGradePoints = state.students.reduce((acc, s) => acc + getGradeValue(s.grade), 0);
+            const avgPoints = studentCount > 0 ? totalGradePoints / studentCount : 0;
+            const avgGrade = Object.keys(gradeValueMap).find(key => gradeValueMap[key] <= avgPoints) || 'N/A';
+            
+            doc('#total-students').textContent = studentCount;
+            doc('#attendance-rate-text').textContent = `${attendanceRate}%`;
+            doc('#average-grade-text').textContent = avgGrade;
+
+            createOrUpdateDonutChart('attendance-chart', attendanceRate, '#22c55e', '#e5e7eb');
+            createOrUpdateDonutChart('average-grade-chart', (avgPoints / 12) * 100, '#60a5fa', '#e5e7eb');
+        };
+
+        const renderPerformanceCharts = () => {
+            // Bar Chart
+            const gradeCounts = state.students.reduce((acc, s) => { const g = s.grade.charAt(0); acc[g] = (acc[g] || 0) + 1; return acc; }, {});
+            createOrUpdateChart('grade-chart', 'bar', Object.keys(gradeCounts).sort(), Object.keys(gradeCounts).sort().map(k => gradeCounts[k]), { plugins: { legend: { display: false } } });
+            
+            // Top Performers List
+            const topPerformers = [...state.students].sort((a,b) => getGradeValue(b.grade) - getGradeValue(a.grade)).slice(0,3);
+            doc('#top-performers-list').innerHTML = topPerformers.map((s, i) => `
+                <li class="flex items-center">
+                    <span class="mr-4 text-lg font-bold text-yellow-500 w-4">${i+1}</span>
+                    <img class="w-8 h-8 rounded-full mr-3" src="${getAvatarUrl(s.name)}">
+                    <span class="font-semibold text-gray-800">${s.name}</span>
+                    <span class="ml-auto font-bold text-gray-600">${s.grade}</span>
+                </li>
+            `).join('') || `<p class="text-gray-500">No data to show leaderboard.</p>`;
+        };
+
+        const renderModals = () => {
+            doc('#edit-modal').style.display = state.studentToEdit ? 'flex' : 'none';
+            doc('#confirmation-modal').style.display = state.studentToDelete ? 'flex' : 'none';
+            if(state.studentToEdit) doc('#edit-modal').innerHTML = modalTemplate('Edit Student', editFormTemplate(state.studentToEdit), 'Save Changes', 'edit-form');
+            if(state.studentToDelete) doc('#confirmation-modal').innerHTML = modalTemplate('Confirm Deletion', `<p class="text-gray-600">Are you sure you want to remove <strong class="text-gray-800">${state.students.find(s=>s.id===state.studentToDelete)?.name}</strong> from the roster?</p>`, 'Confirm Delete', 'confirm-delete-form');
+        };
+
+        const modalTemplate = (title, content, submitText, formId) => `
+            <div class="light-card p-8 w-full max-w-md mx-4 transform transition-all" style="animation: zoomIn 0.3s ease-out;">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">${title}</h2>
+                <form id="${formId}">${content}<div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" class="close-modal-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 font-semibold transition">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 font-semibold transition">${submitText}</button>
+                </div></form>
+            </div>`;
+        const editFormTemplate = s => ['name', 'class', 'roll', 'grade'].map(f => `
+            <div class="mb-4"><label class="block text-sm font-medium text-gray-600">${f.charAt(0).toUpperCase() + f.slice(1)}</label>
+            <input type="${f === 'roll' ? 'number' : 'text'}" id="edit-${f}" value="${s[f]}" required class="light-input mt-1 block w-full rounded-md"></div>`).join('');
+
+        const renderToast = () => {
+            const container = doc('#toast-container');
+            if (state.toast.visible) {
+                const isSuccess = state.toast.type === 'success';
+                const color = isSuccess ? 'indigo' : 'red';
+                container.innerHTML = `<div class="toast bg-${color}-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center"><i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-times-circle'} mr-3"></i>${state.toast.message}</div>`;
+                container.style.display = 'block';
+                setTimeout(() => { state.toast.visible = false; renderToast(); }, 3000);
+            } else {
+                container.style.display = 'none';
+            }
+        };
+
+        // --- CHART CREATION ---
+        const gradeValueMap = {'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C':5,'C-':4,'D':3,'F':0};
+        
+        const createOrUpdateChart = (id, type, labels, data, options = {}) => {
+            if (chartInstances[id]) chartInstances[id].destroy();
+            chartInstances[id] = new Chart(doc(`#${id}`).getContext('2d'), {
+                type, data: { labels, datasets: [{ data, backgroundColor: ['#4f46e5', '#6366f1', '#818cf8', '#a78bfa', '#c4b5fd'], borderWidth: 0, borderRadius: 4 }] }, options
+            });
+        };
+        const createOrUpdateDonutChart = (id, value, color, bgColor) => {
+             if (chartInstances[id]) chartInstances[id].destroy();
+             chartInstances[id] = new Chart(doc(`#${id}`).getContext('2d'), {
+                 type: 'doughnut',
+                 data: { datasets: [{ data: [value, 100-value], backgroundColor: [color, bgColor], borderWidth: 0, cutout: '75%' }] },
+                 options: { responsive: true, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+             });
+        };
+
+        // --- EVENT LISTENERS (same logic as before) ---
+        doc('#tabs').addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if (button) {
+                docAll('.tab-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                docAll('.tab-content').forEach(c => c.classList.remove('active'));
+                doc(`#${button.dataset.tab}-section`).classList.add('active');
+            }
+        });
+
+        doc('main').addEventListener('click', e => {
+            const editBtn = e.target.closest('.edit-btn');
+            const deleteBtn = e.target.closest('.delete-btn');
+            const attendanceBtn = e.target.closest('.attendance-btn');
+            if (editBtn) setState({ studentToEdit: state.students.find(s=>s.id === +editBtn.dataset.id) });
+            if (deleteBtn) setState({ studentToDelete: +deleteBtn.dataset.id });
+            if (attendanceBtn) {
+                const students = state.students.map(s => s.id === +attendanceBtn.dataset.id ? {...s, attendance: attendanceBtn.dataset.status} : s);
+                setState({ students });
+            }
+        });
+
+        doc('#add-student-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const newStudent = { id: state.nextId, attendance: 'Present', ...Object.fromEntries(fd.entries()) };
+            newStudent.roll = +newStudent.roll;
+            setState({ students: [...state.students, newStudent], nextId: state.nextId + 1, toast: { message: 'Student Enrolled!', type: 'success', visible: true } });
+            e.target.reset();
+        });
+
+        document.addEventListener('submit', e => {
+            if (e.target.id === 'edit-form') {
+                e.preventDefault();
+                const students = state.students.map(s => s.id === state.studentToEdit.id ? { ...s, name: doc('#edit-name').value, class: doc('#edit-class').value, roll: +doc('#edit-roll').value, grade: doc('#edit-grade').value } : s);
+                setState({ students, studentToEdit: null, toast: { message: 'Changes Saved!', type: 'success', visible: true } });
+            }
+            if (e.target.id === 'confirm-delete-form') {
+                e.preventDefault();
+                const students = state.students.filter(s => s.id !== state.studentToDelete);
+                setState({ students, studentToDelete: null, toast: { message: 'Student Removed.', type: 'error', visible: true } });
+            }
+        });
+        
+        document.addEventListener('click', e => {
+            if (e.target.closest('.close-modal-btn')) setState({ studentToEdit: null, studentToDelete: null });
+        });
+
+        // --- INITIALIZATION ---
+        const setState = (newState) => {
+            Object.assign(state, newState);
+            render();
+        };
+
+        const init = () => {
+            // Set Chart.js global defaults for light mode
+            Chart.defaults.color = '#6b7280'; // text-secondary
+            Chart.defaults.borderColor = '#e5e7eb'; // border-color
+            Chart.defaults.scale.grid.display = false;
+
+
+            setTimeout(() => setState({ isLoading: false }), 1000);
+        };
+        
+        init();
+    });
+    </script>
+</body>
+</html>
+
