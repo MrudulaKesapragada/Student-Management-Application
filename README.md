@@ -1,4 +1,4 @@
-This project is the first phase of a full-stack Student Management Application. This initial version is a fully client-side application built with HTML, Tailwind CSS, and vanilla JavaScript, focusing on a modern, responsive, and feature-rich user interface.
+This project is the first phase of a full-stack Student Management Application. This initial version is a fully client-side application built with HTML, CSS, and  JavaScript, focusing on a modern, responsive, and feature-rich user interface. and for the back end node js.
 
 🚀 Features
 
@@ -36,13 +36,15 @@ Responsive Design: The layout is fully responsive and works beautifully on deskt
 
 🛠️ Technology Stack
 
-HTML5: The core structure of the application.
+HTML: The core structure of the application.
 
-Tailwind CSS: A utility-first CSS framework for rapid and modern UI development.
+CSS: A utility-first CSS framework for rapid and modern UI development.
 
 JavaScript (ES6+): Handles all the application logic, state management, and DOM manipulation.
 
 Chart.js: A powerful library for creating beautiful and interactive charts.
+
+Node js: For handling the backend.
 
 Font Awesome: Used for icons throughout the application.
 
